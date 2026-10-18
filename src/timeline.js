@@ -1,7 +1,7 @@
 export { chapters } from './demo.js';
 
 export function locateSegment(segments, time, end = Infinity) {
-  const segment = segments.find((entry) => entry.duration >= 1 && entry.offset + entry.duration > time && entry.offset < end);
+  const segment = segments.find((entry) => entry.playable !== false && entry.duration >= 1 && entry.offset + entry.duration > time && entry.offset < end);
   return segment ? { segment, localTime: Math.max(0, time - segment.offset), time: Math.max(time, segment.offset) } : null;
 }
 

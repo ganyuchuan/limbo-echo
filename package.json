@@ -9,6 +9,7 @@
     "prebuild": "node scripts/prepare-audio.mjs",
     "build": "vite build",
     "test": "node --test src/timeline.test.js",
+    "import:recording": "node scripts/import-recording.mjs",
     "check:public": "node scripts/check-public.mjs"
   },
   "dependencies": {

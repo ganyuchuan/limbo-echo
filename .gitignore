@@ -1,6 +1,7 @@
 node_modules/
 dist/
 public/audio/
+public/private/
 .DS_Store
 
 .env

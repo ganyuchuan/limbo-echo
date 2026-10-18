@@ -16,6 +16,15 @@ body {
 }
 
 ::selection { color: #000; background: #fff; }
+.recording-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 20px 0; min-width: 0; }
+.recording-toolbar select { color: #fff; background: #050505; border: 1px solid #777; padding: 8px; max-width: 100%; min-width: 0; font: inherit; }
+.recording-toolbar > span { color: #aaa; font-size: 11px; overflow-wrap: anywhere; }
+.entry-location { flex-wrap: wrap; }
+.entry-location .location-name { flex-shrink: 1; }
+h1, .player-title h3, .entry-title h3, #recording-warnings, .archive-note p { overflow-wrap: anywhere; min-width: 0; }
+.page-heading > div:first-child, .player-title > div:last-child { min-width: 0; max-width: 100%; }
+.track-icon { flex-shrink: 0; }
+.record-stats strong { white-space: nowrap; }
 .header { background: #050505; border-bottom: 2px solid #fff; }
 .brand strong, .eyebrow, .small-code, .record-stats strong, .record-stats small,
 .entry-kicker, .entry-node, .entry-bottom, .player-top, .wave-coordinate,
@@ -151,8 +160,16 @@ footer, footer > span:first-child { color: #aaa; }
   .wave-coordinate { font-size: 7px; }
 }
 @media (max-width: 480px) {
-  .record-stats strong { font-size: 25px; }
-  .record-stats { gap: 14px; }
+  h1, .day-meta { white-space: normal; }
+  .record-stats strong { font-size: 18px; }
+  .record-stats { gap: 8px; max-width: 100%; }
+  .profile-logo { width: 48px; height: 48px; }
+  .brand { gap: 8px; }
+  .brand strong { font-size: 16px; }
+  .brand-mark { font-size: 22px; }
+  .brand-slash { padding: 0 4px; }
+  .github-link { width: 32px; height: 32px; }
+  main { padding: 0 16px; }
   .page-heading { padding-bottom: 28px; }
   .entry-kicker { align-items: flex-start; }
   .entry-duration { flex-shrink: 0; }

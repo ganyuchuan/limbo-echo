@@ -4,13 +4,13 @@ export function createPixelWave(container) {
   const width = 192;
   const height = 76;
   const source = document.createElement('div');
-  const wave = new SiriWave({
+  const makeWave = (amplitude) => new SiriWave({
     container: source,
     style: 'ios9',
     width,
     height,
     ratio: 1,
-    amplitude: 0,
+    amplitude,
     speed: 0.12,
     lerpSpeed: 0.12,
     autostart: true,
@@ -21,7 +21,10 @@ export function createPixelWave(container) {
       { color: '255,255,255' },
     ],
   });
-  const sourceContext = source.querySelector('canvas').getContext('2d', { willReadFrequently: true });
+  let wave = makeWave(0);
+  let sourceContext = source.querySelector('canvas').getContext('2d', { willReadFrequently: true });
+  let active = false;
+  wave.stop();
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -32,8 +35,17 @@ export function createPixelWave(container) {
   const threshold = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 
   return {
-    setAmplitude: (amplitude) => wave.setAmplitude(amplitude),
+    setAmplitude(amplitude) {
+      if (amplitude > 0.001 && !active) {
+        wave.dispose();
+        wave = makeWave(amplitude);
+        sourceContext = source.querySelector('canvas').getContext('2d', { willReadFrequently: true });
+      } else if (amplitude <= 0.001) wave.stop();
+      active = amplitude > 0.001;
+      wave.setAmplitude(amplitude);
+    },
     render() {
+      if (!active) { output.clearRect(0, 0, width, height); return; }
       const input = sourceContext.getImageData(0, 0, width, height).data;
       for (let row = 0; row < height; row += 1) {
         for (let column = 0; column < width; column += 1) {

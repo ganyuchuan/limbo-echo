@@ -29,22 +29,58 @@ npm run check:public
 
 | 路径 | 用途 |
 |---|---|
-| [SKILL.md](SKILL.md) | 可单独发送给 agent 的端到端操作技能 |
+| [SKILL.md](SKILL.md) | 复用现成模板的端到端操作技能 |
 | [src/demo.js](src/demo.js) | 虚构章节、文本与标记 |
 | [scripts/prepare-audio.mjs](scripts/prepare-audio.mjs) | 生成本地合成演示音频 |
+| [scripts/import-recording.mjs](scripts/import-recording.mjs) | 固定的数据校验、音频转码与记录导入命令 |
+| [src/recording.js](src/recording.js) | 网页与导入命令共享的录音契约校验 |
 | [recording-transcribe/SKILL.md](recording-transcribe/SKILL.md) | 可选的转写整理子技能 |
 
 ## 一句话生成录音网页
 
-给具备本地文件、终端和浏览器操作能力的 agent 发送以下三类附件，再输入 **“转写”**：
+先安装完整 Limbo Echo 项目，再给具备本地文件、终端和浏览器操作能力的 agent 发送以下三类附件，输入 **“转写”**：
 
 1. 根目录 [SKILL.md](SKILL.md)。
 2. 本批次所有 `*.m4a` 录音切片。
 3. 对应的 `task.json`。
 
-技能指导 agent 完成校验、本地转写、摘要、真实数据接入、网页生成、启动与浏览器展示。它是 agent 的操作规程，不是自动导入程序；仅复制录音不会让演示站自动加载它们。根目录技能不保证被工具自动发现，应明确附上，或按所用 agent 的技能安装方式注册。
+技能指导 agent 完成校验、转写、章节摘要数据、固定命令导入、启动与浏览器展示。agent 只生成数据，不再逐批编写 JavaScript 或重建界面。单独一份技能不包含模板，项目缺失时应先安装完整项目。根目录技能不保证被工具自动发现，应明确附上，或按所用 agent 的技能安装方式注册。
 
 处理真实录音通常需要 Python、faster-whisper 和 FFmpeg，首次可能下载模型与依赖。默认本地转写，云端 ASR 必须另行授权；缺件或环境受限时如实报告，不生成虚假转写。
+
+## 导入转写产物
+
+网页与转写服务解耦：豆包 API 或本地模型产生逐句 JSON，agent 仅整理 `chapters.json`，固定工具完成导入。要求 FFmpeg、FFprobe 可用。
+
+```sh
+npm run import:recording -- --task-json private/batch/task.json --audio-dir private/batch --transcripts private/batch/transcripts --chapters private/batch/chapters.json --mode local --model faster-whisper/medium
+```
+
+确实经授权使用豆包时，改为 `--mode cloud --model doubao/seed-asr`。本命令不联网、不调用豆包、不读取密钥。
+
+章节数据示例，内容与时码须根据实际转写填写：
+
+```json
+{
+	"title": "录音 01",
+	"chapters": [
+		{
+			"id": "chapter-01", "start": 0, "end": 20,
+			"title": "片段主题", "tag": "RECORDING", "icon": "audio-lines",
+			"location": "", "description": "根据原文整理的简述。",
+			"bullets": ["根据原文整理的要点。"]
+		}
+	]
+}
+```
+
+可附加经过核实的 `recordingDate`、带时区的 `startedAt` 与 IANA `timezone`，未知时省略；默认使用相对时码。章节不能重叠，不要求填满静音区间。
+
+- 转写缓存优先为 `transcripts/<full-stem>.json`，包含 `utterances: [{start, end, text}]`（秒）；也支持豆包原始 `result.utterances` 中的 `start_time/end_time`（毫秒）。旧短 UID 仅在本批次唯一时兼容，碰撞则拒绝导入。
+- 缺失音频、哈希不符、重叠清单、非法路径会拒绝导入；部分转写失败会展示警告，全部失败则拒绝生成占位记录。
+- 五类交付文件保存在 `recordings/<id>/`，播放缓存位于 `public/audio/<id>/`，网页数据位于 `public/private/`。音频按原始哈希与转码参数命名，原音频不改动。
+- 保留演示档案和历史记录，刷新页面自动选中最后导入的记录。已有 ID 不覆盖，重新导入可显式传入新的 `--id`。
+- 模板运行时使用 JSON，不从 Markdown 提取时码。导入不修改源码，外部标题、摘要与原文均按纯文本渲染。
 
 ## 隐私与公开发布
 
