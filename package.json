@@ -1,0 +1,21 @@
+{
+  "name": "limbo-echo",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "predev": "node scripts/prepare-audio.mjs",
+    "dev": "vite --host 127.0.0.1",
+    "prebuild": "node scripts/prepare-audio.mjs",
+    "build": "vite build",
+    "test": "node --test src/timeline.test.js",
+    "check:public": "node scripts/check-public.mjs"
+  },
+  "dependencies": {
+    "lucide": "^0.468.0",
+    "siriwave": "^2.4.0"
+  },
+  "devDependencies": {
+    "vite": "^6.4.1"
+  }
+}
