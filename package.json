@@ -8,7 +8,7 @@
     "dev": "vite --host 127.0.0.1",
     "prebuild": "node scripts/prepare-audio.mjs",
     "build": "vite build",
-    "test": "node --test src/timeline.test.js",
+    "test": "node --test src/timeline.test.js scripts/jobs.test.mjs",
     "import:recording": "node scripts/import-recording.mjs",
     "check:public": "node scripts/check-public.mjs"
   },

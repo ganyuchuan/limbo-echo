@@ -1,16 +1,17 @@
 import { createPixelWave } from './pixel-wave';
 import { createSignalEnvelope } from './signal';
-import { createIcons, Bike, MapPin, Dumbbell, Footprints, MessagesSquare, Utensils, Play, Pause, SkipBack, SkipForward, RotateCcw, RotateCw, Volume2, VolumeX, Search, ArrowUpRight, Headphones, Bookmark, ChevronRight, AudioLines, Github } from 'lucide';
+import { createIcons, Bike, MapPin, Dumbbell, Footprints, MessagesSquare, Utensils, Play, Pause, SkipBack, SkipForward, RotateCcw, RotateCw, Volume2, VolumeX, Search, ArrowUpRight, Headphones, Bookmark, ChevronRight, AudioLines, Github, FolderPlus, Upload, X, RefreshCw } from 'lucide';
 import { demo } from './demo';
 import { chapters as demoChapters, locateSegment, formatTime } from './timeline';
 import { validateRecording, createPlaybackSession, safeId } from './recording';
+import { mountImportPanel } from './import-panel';
 import './style.css';
 import './monochrome.css';
 
 let task = demo;
 let transcript = demo.transcript;
 let chapters = demoChapters;
-const icons = { Bike, MapPin, Dumbbell, Footprints, MessagesSquare, Utensils, Play, Pause, SkipBack, SkipForward, RotateCcw, RotateCw, Volume2, VolumeX, Search, ArrowUpRight, Headphones, Bookmark, ChevronRight, AudioLines, Github };
+const icons = { Bike, MapPin, Dumbbell, Footprints, MessagesSquare, Utensils, Play, Pause, SkipBack, SkipForward, RotateCcw, RotateCw, Volume2, VolumeX, Search, ArrowUpRight, Headphones, Bookmark, ChevronRight, AudioLines, Github, FolderPlus, Upload, X, RefreshCw };
 const iconNames = new Set(Object.keys(icons).map((name) => name.replace(/[A-Z]/g, (letter, index) => `${index ? '-' : ''}${letter.toLowerCase()}`)));
 const icon = (name) => `<i data-lucide="${iconNames.has(name) ? name : 'audio-lines'}" aria-hidden="true"></i>`;
 const refreshIcons = () => createIcons({ icons, attrs: { 'stroke-width': 1.5 } });
@@ -324,7 +325,13 @@ function switchRecording(id) {
   window.scrollTo(0, 0);
 }
 
-async function loadRecordings() {
+let recordsRequest;
+async function loadRecordings({ selectLatest = false } = {}) {
+  if (recordsRequest) return recordsRequest;
+  recordsRequest = refreshRecordingList(selectLatest);
+  try { await recordsRequest; } finally { recordsRequest = null; }
+}
+async function refreshRecordingList(selectLatest) {
   try {
     const response = await fetch(`${import.meta.env.BASE_URL}private/recordings.json`, { cache: 'no-store' });
     if (response.status === 404 || response.headers.get('content-type')?.includes('text/html')) return;
@@ -332,8 +339,11 @@ async function loadRecordings() {
     const manifest = await response.json();
     if (!Array.isArray(manifest.recordings)) throw new Error('录音列表格式错误');
     let newest;
+    const seen = new Set();
     for (const entry of manifest.recordings) {
-      if (!safeId(entry.id) || recordings.has(entry.id)) throw new Error('录音 ID 无效或重复');
+      if (!safeId(entry.id) || seen.has(entry.id)) throw new Error('录音 ID 无效或重复');
+      seen.add(entry.id);
+      if (recordings.has(entry.id)) continue;
       const result = await fetch(`${import.meta.env.BASE_URL}private/${entry.id}/recording.json`, { cache: 'no-store' });
       if (!result.ok) throw new Error('无法读取录音数据');
       const recording = validateRecording(await result.json());
@@ -342,14 +352,20 @@ async function loadRecordings() {
       element('recording-select').add(new Option(`${recording.recordingDate || '日期未确认'} / ${recording.title}`, entry.id));
       newest = entry.id;
     }
-    if (newest) { element('recording-select').value = newest; switchRecording(newest); }
+    if (selectLatest && newest && audio.paused && task.id === demo.id && current === 0) { element('recording-select').value = newest; switchRecording(newest); }
   } catch (error) {
     element('recording-warnings').textContent = `录音导入失败：${error.message}`;
     element('recording-warnings').hidden = false;
+    throw error;
   }
 }
 element('recording-select').addEventListener('change', (event) => switchRecording(event.target.value));
 selectChapter(0);
 animateSignal();
-loadRecordings();
-window.addEventListener('pagehide', () => { playbackSession.invalidate(); cancelAnimationFrame(animationFrame); context?.close(); wave.dispose(); });
+loadRecordings({ selectLatest: true }).catch(() => {});
+const disposeImportPanel = mountImportPanel({
+  refreshRecordings: () => loadRecordings(),
+  openRecording: (id) => { if (recordings.has(id)) { element('recording-select').value = id; switchRecording(id); } },
+  refreshIcons,
+});
+window.addEventListener('pagehide', () => { disposeImportPanel(); playbackSession.invalidate(); cancelAnimationFrame(animationFrame); context?.close(); wave.dispose(); });

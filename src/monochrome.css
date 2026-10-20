@@ -19,6 +19,29 @@ body {
 .recording-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 20px 0; min-width: 0; }
 .recording-toolbar select { color: #fff; background: #050505; border: 1px solid #777; padding: 8px; max-width: 100%; min-width: 0; font: inherit; }
 .recording-toolbar > span { color: #aaa; font-size: 11px; overflow-wrap: anywhere; }
+.import-button, .job-actions button, .import-dialog button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 8px 10px; background: #050505; color: #fff; border: 1px solid #777; font-size: 12px; }
+.import-button { margin-left: auto; }
+.import-button:hover, .job-actions button:hover, .import-dialog button:hover { background: #fff; color: #050505; }
+.import-jobs { border-bottom: 1px dashed #555; margin-bottom: 18px; font-size: 12px; min-width: 0; }
+.import-jobs:has(details[hidden]):not(:has(p:not([hidden]))) { display: none; }
+.import-jobs summary { cursor: pointer; padding: 10px 0; }
+.job-count { color: #aaa; }
+.job-list { list-style: none; padding: 0; margin: 0; }
+.job-list li { padding: 14px 0; border-top: 1px dashed #555; }
+.job-heading { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.job-heading strong { font-weight: 400; }
+.job-list progress { display: block; width: 100%; height: 5px; margin: 12px 0; accent-color: #fff; }
+.job-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.job-error, .import-error, .import-upload { overflow-wrap: anywhere; line-height: 1.7; }
+.job-file { color: #aaa; font-size: 11px; overflow-wrap: anywhere; }
+.import-dialog { width: 520px; max-width: calc(100% - 32px); max-height: calc(100% - 32px); overflow: auto; border: 1px solid #fff; background: #050505; color: #fff; padding: 24px; font-size: 13px; line-height: 1.8; }
+.import-dialog::backdrop { background: #000b; }
+.import-dialog h2 { font-size: 20px; margin: 0 0 14px; }
+.import-selection { overflow-wrap: anywhere; color: #bbb; }
+.import-consent { display: flex; align-items: flex-start; gap: 10px; margin: 20px 0; }
+.import-consent input { margin-top: 5px; accent-color: #fff; flex-shrink: 0; }
+.import-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+.retry-warning { border-left: 2px solid #fff; padding-left: 12px; }
 .entry-location { flex-wrap: wrap; }
 .entry-location .location-name { flex-shrink: 1; }
 h1, .player-title h3, .entry-title h3, #recording-warnings, .archive-note p { overflow-wrap: anywhere; min-width: 0; }

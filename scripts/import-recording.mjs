@@ -6,6 +6,7 @@ import { parseArgs } from 'node:util';
 import { pathToFileURL } from 'node:url';
 import { validateRecording, safeId } from '../src/recording.js';
 import { formatTime } from '../src/timeline.js';
+import { acquireFileLock } from './file-lock.mjs';
 
 const readJson = async (path) => JSON.parse(await readFile(path, 'utf8'));
 const exists = async (path) => { try { await access(path); return true; } catch { return false; } };
@@ -27,11 +28,12 @@ function run(command, args) {
 
 export function normalizeUtterances(data) {
   const source = data.utterances || data.result?.utterances;
+  const rawContainer = !Array.isArray(data.utterances) && Array.isArray(data.result?.utterances);
   if (!Array.isArray(source)) throw new Error('Missing utterances array');
   return source.map((cue) => {
-    const raw = !Object.hasOwn(cue, 'start');
-    const start = raw ? cue.start_time / 1000 : cue.start;
-    const end = raw ? cue.end_time / 1000 : cue.end;
+    const raw = rawContainer || !Object.hasOwn(cue, 'start');
+    const start = raw ? (cue.start_time ?? cue.start) / 1000 : cue.start;
+    const end = raw ? (cue.end_time ?? cue.end) / 1000 : cue.end;
     if (![start, end].every((value) => typeof value === 'number' && Number.isFinite(value) && value >= 0) || end < start || typeof cue.text !== 'string') throw new Error('Invalid ASR timestamp or text');
     return { start, end, text: cue.text };
   });
@@ -129,6 +131,9 @@ export async function importRecording(options, root = resolve(import.meta.dirnam
   const segmentText = ['# 按切片整理稿', '', ...segments.flatMap((segment) => [`## ${formatTime(segment.offset)} / ${segment.file}`, '', ...utterances.filter((cue) => cue.start >= segment.offset && cue.start < segment.offset + segment.duration).map((cue) => cue.text), ''])].join('\n');
   const summary = [`# ${recording.title}`, '', `- 录音 ID：${id}`, `- 总时长：${formatTime(duration)}`, `- 成功 ${stats.success} / 失败 ${stats.failed} / 跳过 ${stats.skipped}`, `- 处理：${options.mode} / ${options.model}`, '', '## 时间线摘要', '', ...recording.chapters.flatMap((chapter) => [`### ${formatTime(chapter.start)} → ${formatTime(chapter.end)} / ${chapter.title}`, chapter.description, ...chapter.bullets.map((bullet) => `- ${bullet}`), '']), '## 书签', ...recording.markers.map((marker) => `- ${formatTime(marker)} (${marker}s)`), '', '## 缺片与存疑', ...recording.warnings.map((warning) => `- ${warning}`), '', '## 处理与隐私', options.mode === 'cloud' ? '语音识别使用云端服务，音频曾上传第三方。网页使用本地播放缓存，未公开部署。' : '语音识别在本机进行。网页使用本地播放缓存，未公开部署。', '', '## 完整分段稿', '', segmentText].join('\n');
   const registryPath = join(root, 'public', 'private', 'recordings.json');
+  await mkdir(dirname(registryPath), { recursive: true });
+  const release = await acquireFileLock(join(dirname(registryPath), '.import.lock'));
+  try {
   const registry = await exists(registryPath) ? await readJson(registryPath) : { version: 1, recordings: [] };
   if (!Array.isArray(registry.recordings) || registry.recordings.some((entry) => entry.id === id)) throw new Error('Invalid or duplicate registry entry');
   const free = await statfs(root);
@@ -152,6 +157,7 @@ export async function importRecording(options, root = resolve(import.meta.dirnam
   } finally {
     if (!registered) for (const path of [output, web, audioOutput]) await rm(path, { recursive: true, force: true });
   }
+  } finally { await release(); }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
